@@ -31,4 +31,38 @@ int main() {
   for (int i = 0; i < 25; ++i) wrapped.add(1, UINT32_MAX - 500);
   assert(wrapped.ready(500));
   assert(!wrapped.ready(3000));
+
+  for (float gain : {100.0f, -100.0f}) {
+    for (float disturbance : {-1000.0f, 1000.0f}) {
+      filament_scale::Readings filtered;
+      float baseline = 10000 + 3000 * gain;
+      float disturbed = baseline + disturbance * gain;
+      for (uint32_t i = 0; i < 25; ++i) filtered.add(baseline, i * 200);
+      for (uint32_t i = 0; i < 12; ++i) {
+        uint32_t now = 5000 + i * 200;
+        filtered.add(disturbed, now);
+        assert(filtered.mass(now, 10000, gain) == 3000);
+        assert(!filtered.stable(now, 5 * std::abs(gain)));
+        assert(filtered.mean() != baseline);
+        assert(filtered.range() == std::abs(disturbance * gain));
+      }
+      filtered.add(disturbed, 7400);
+      assert(filtered.mass(7400, 10000, gain) == 3000 + disturbance);
+      for (uint32_t i = 0; i < 13; ++i) filtered.add(baseline, 7600 + i * 200);
+      assert(filtered.mass(10000, 10000, gain) == 3000);
+      assert(std::isnan(filtered.mass(13000, 10000, gain)));
+      filtered.add(baseline, 13000);
+      assert(!filtered.ready(13000));
+      assert(std::isnan(filtered.mass(13000, 10000, gain)));
+      for (uint32_t i = 1; i < 25; ++i) filtered.add(baseline, 13000 + i * 200);
+      assert(filtered.mass(17800, 10000, gain) == 3000);
+    }
+  }
+
+  filament_scale::Readings trend;
+  for (uint32_t i = 0; i < 25; ++i) trend.add(310000 - float(i) * 100, i * 200);
+  assert(trend.mass(4800, 10000, 100) == 2988);
+  assert(trend.mean() == 308800);
+  assert(std::isnan(trend.mass(4800, 10000, NAN)));
+  assert(std::isnan(trend.mass(4800, 10000, INFINITY)));
 }

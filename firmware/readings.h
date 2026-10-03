@@ -49,7 +49,11 @@ class Readings {
   float mass(uint32_t now, float zero, float counts_per_g) const {
     if (!ready(now) || !std::isfinite(counts_per_g) ||
         std::abs(counts_per_g) < 0.001f) return NAN;
-    return (mean() - zero) / counts_per_g;
+    // Brief filament pulls must not bias the estimate or change calibration samples.
+    auto sorted = values_;
+    auto middle = sorted.begin() + sorted.size() / 2;
+    std::nth_element(sorted.begin(), middle, sorted.end());
+    return (*middle - zero) / counts_per_g;
   }
 
  private:
