@@ -65,6 +65,8 @@ The cell is a cantilever: its cable end is clamped to a pedestal in the base, it
 
 Calibration stores three values. **1 Capture empty platform** saves the zero, **2 Capture calibration mass** the counts per gram, and **3 Capture dryer with full spool** subtracts **Full filament mass** from the reading and saves the rest as dryer plus empty spool. Repeat step 3 for every new spool, because empty spools differ in weight.
 
+Weight estimates use the median of the latest 25 samples to suppress brief filament pulls. Sustained load changes reach the estimate after about 2.6 seconds at the normal sample rate, then publish on the next five-second update. Zero and reference-mass captures still use the unfiltered average, and noise and stability diagnostics retain every sample. Updating this filter requires no recalibration and preserves the saved calibration and spool tare through a normal OTA update.
+
 The design target is ±10 g. Cable tension, filament pull during a print, heat and plastic creep all shift the reading, so treat it as a trend while printing.
 
 ## Configuration
